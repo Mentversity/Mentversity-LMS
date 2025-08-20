@@ -13,7 +13,7 @@ import {
   Award,
   Target,
 } from 'lucide-react';
-import { Inter, Manrope, Nunito_Sans } from 'next/font/google';
+import { Inter, Manrope, Nunito } from 'next/font/google';
 
 const inter = Inter({ subsets: ['latin'] });
 

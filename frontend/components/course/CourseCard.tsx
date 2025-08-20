@@ -14,10 +14,10 @@ import {
   PlayCircle,
   BookOpen,
 } from 'lucide-react';
-import { Nunito_Sans } from 'next/font/google';
+import { Nunito } from 'next/font/google';
 import Image from 'next/image';
 
-const nunitoSans = Nunito_Sans({
+const nunitoSans = Nunito({
   subsets: ['latin'],
   weight: ['400', '600', '700', '800'],
 });

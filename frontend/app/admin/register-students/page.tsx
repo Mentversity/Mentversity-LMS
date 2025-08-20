@@ -7,9 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, UserPlus, ArrowLeft } from 'lucide-react';
 import RegisterStudentForm from '@/components/admin/RegisterStudentForm'; // Import the form component
-import { Nunito_Sans } from 'next/font/google';
+import { Nunito } from 'next/font/google';
 
-const nunitoSans = Nunito_Sans({
+const nunitoSans = Nunito({
   subsets: ['latin'],
   weight: ['400', '600', '700', '800'],
 });
