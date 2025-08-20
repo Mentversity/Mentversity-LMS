@@ -3,18 +3,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { coursesApi, videosApi, assignmentsApi, progressApi } from '@/lib/api';
-import { Card, CardHeader, CardContent, CardDescription } from '@/components/ui/card'; // CardDescription added for richer course meta
+import { Card, CardHeader, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import { Upload, PlayCircle, ArrowRight, ArrowLeft, Loader2, CheckCircle, Download, Menu, X } from 'lucide-react'; // CheckCircle and Menu/X added for mobile menu
+import { Upload, PlayCircle, ArrowRight, ArrowLeft, Loader2, CheckCircle, Download, Menu, X } from 'lucide-react';
 import Link from 'next/link';
-import { Textarea } from '@/components/ui/textarea'; // Assuming you have a Textarea component
-import { Inter, Manrope, Nunito_Sans } from 'next/font/google';
-import { cn } from '@/lib/utils'; // FIXED: Added missing import for `cn`
+import { Textarea } from '@/components/ui/textarea';
+import { Inter } from 'next/font/google';
+import { cn } from '@/lib/utils';
 
 // Use one of the specified fonts
 const inter = Inter({ subsets: ['latin'] });
