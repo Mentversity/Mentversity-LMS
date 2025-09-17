@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'admin' | 'student';
+  requiredRole?: 'admin' | 'student' | 'trainer'; // ✅ Added trainer
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
@@ -38,7 +38,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
     const role = user?.role || user?.data?.user?.role; // Safe role extraction
     if (requiredRole && role !== requiredRole) {
-      router.replace(role === 'admin' ? '/admin/dashboard' : '/student/dashboard');
+      if (role === 'admin') {
+        router.replace('/admin/dashboard'); // 
+      }
+      else if (role === 'trainer') {
+        router.replace('/trainer/dashboard'); // 
+      }
+       else if (role === 'student') {
+        router.replace('/student/dashboard');
+      } else {
+        router.replace('/login'); // fallback if role is invalid
+      }
     }
   }, [authChecked, isAuthenticated, requiredRole, user, isLoading, router]);
 

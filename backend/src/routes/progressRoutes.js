@@ -4,5 +4,6 @@ const { markComplete, getCourseProgress } = require('../controllers/progressCont
 
 router.post('/topics/:id/complete', protect, markComplete);
 router.get('/progress/:courseId', protect, getCourseProgress);
+router.get('/progress', protect, getCourseProgress);
 
 module.exports = router;

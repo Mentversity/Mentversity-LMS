@@ -4,29 +4,36 @@ const {
   getCourses,
   createCourse,
   getCourseDetails,
-  updateCourse, // NEW
-  deleteCourse, // NEW
+  updateCourse,
+  deleteCourse,
   addModule,
-  updateModule, // NEW
-  deleteModule, // NEW
+  updateModule,
+  deleteModule,
   addTopic,
-  updateTopic, // NEW
-  deleteTopic // NEW
+  updateTopic,
+  deleteTopic
 } = require('../controllers/courseController');
 const { upload } = require('../middleware/upload');
 
+// Allow both 'admin' and 'trainer' to create a new course
+router.post('/courses', protect, authorize('admin', 'trainer'), upload.single('thumbnail'), createCourse);
+
+// Allow both 'admin' and 'trainer' to update and delete a course
+router.put('/courses/:id', protect, authorize('admin', 'trainer'),upload.single('thumbnail'), updateCourse);
+router.delete('/courses/:id', protect, authorize('admin', 'trainer'), deleteCourse);
+
+// Allow both 'admin' and 'trainer' to add, update, and delete modules
+router.post('/courses/:id/modules', protect, authorize('admin', 'trainer'), addModule);
+router.put('/modules/:id', protect, authorize('admin', 'trainer'), updateModule);
+router.delete('/modules/:id', protect, authorize('admin', 'trainer'), deleteModule);
+
+// Allow both 'admin' and 'trainer' to add, update, and delete topics
+router.post('/modules/:id/topics', protect, authorize('admin', 'trainer'), addTopic);
+router.put('/topics/:id', protect, authorize('admin', 'trainer'), updateTopic);
+router.delete('/topics/:id', protect, authorize('admin', 'trainer'), deleteTopic);
+
+// These routes already have correct permissions
 router.get('/courses', protect, getCourses);
-router.post('/courses', protect, authorize('admin'), upload.single('thumbnail'), createCourse);
 router.get('/courses/:id', protect, getCourseDetails);
-router.put('/courses/:id', protect, authorize('admin'), updateCourse); // NEW
-router.delete('/courses/:id', protect, authorize('admin'), deleteCourse); // NEW
-
-router.post('/courses/:id/modules', protect, authorize('admin'), addModule);
-router.put('/modules/:id', protect, authorize('admin'), updateModule); // NEW
-router.delete('/modules/:id', protect, authorize('admin'), deleteModule); // NEW
-
-router.post('/modules/:id/topics', protect, authorize('admin'), addTopic);
-router.put('/topics/:id', protect, authorize('admin'), updateTopic); // NEW
-router.delete('/topics/:id', protect, authorize('admin'), deleteTopic); // NEW
 
 module.exports = router;

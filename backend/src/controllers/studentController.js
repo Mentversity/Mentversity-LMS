@@ -37,6 +37,22 @@ exports.getAllStudents = async (req, res) => {
   }
 };
 
+exports.getTotalStudentsCount = async (req, res) => {
+  try {
+    const totalCount = await User.countDocuments({ role: 'student' });
+    res.status(200).json({
+      success: true,
+      totalCount: totalCount
+    });
+  } catch (error) {
+    console.error(`Error fetching total students count: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      error: 'Server Error: Could not retrieve total students count.',
+    });
+  } 
+};
+
 /**
  * @desc    Get students by enrolled course with pagination
  * @route   GET /api/admin/students/course/:courseId

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   BookOpen,
@@ -8,7 +8,6 @@ import {
   ChevronRight,
   CheckCircle2,
   Plus,
-  Upload,
   Trash2,
   Loader2,
   Video,
@@ -59,7 +58,6 @@ type CourseForm = {
   title: string;
   description: string;
   category?: string;
-  price?: number;
   level?: 'beginner' | 'intermediate' | 'advanced';
   thumbnailFile?: File | null;
   modules: ModuleForm[];
@@ -91,25 +89,14 @@ export default function CreateCoursePage() {
     title: '',
     description: '',
     category: '',
-    price: 0,
     level: 'beginner',
     thumbnailFile: null,
-    modules: [
-      {
-        title: '',
-        order: 1,
-        topics: [
-          {
-            title: '',
-            order: 1,
-            content: '',
-            videoFile: null,
-            assignment: { title: '', description: '', points: 100, file: null },
-          },
-        ],
-      },
-    ],
+    modules: [],
   });
+
+  useEffect(() => {
+    document.title = 'Admin Create Course - Mentversity';
+  }, []);
 
   const steps = useMemo(
     () => [
@@ -223,7 +210,7 @@ export default function CreateCoursePage() {
       return { ...f, modules };
     });
 
-  // ---------- Rollback helper ----------
+  // ---------- Rollback helper (unchanged) ----------
   const rollbackCreated = async (created: {
     courseId?: string | null;
     moduleIds: string[];
@@ -294,14 +281,12 @@ export default function CreateCoursePage() {
     }
   };
 
-  // ---------- Create flow ----------
+  // ---------- Create flow - REFACTORED for multi-step ----------
   const handleCreate = async () => {
     if (!form.title.trim())
       return openModal('Validation Error', 'Please enter a course title.', 'error');
     if (!form.description.trim())
       return openModal('Validation Error', 'Please enter a description.', 'error');
-    if (!form.modules.length)
-      return openModal('Validation Error', 'Please add at least one module.', 'error');
 
     const created: {
       courseId?: string | null;
@@ -319,7 +304,6 @@ export default function CreateCoursePage() {
       courseFormData.append('title', form.title);
       courseFormData.append('description', form.description);
       if (form.category) courseFormData.append('category', form.category);
-      courseFormData.append('price', String(form.price || 0));
       courseFormData.append('level', form.level || 'beginner');
       if (form.thumbnailFile) {
         courseFormData.append('thumbnail', form.thumbnailFile);
@@ -443,7 +427,7 @@ export default function CreateCoursePage() {
     }
   };
 
-  //--- UI - REDESIGNED ---
+  //--- UI - REDESIGNED with multi-step ---
   return (
     <div
       className={`${inter.className} p-6 md:p-10 bg-[#F4F6F9] min-h-screen text-gray-800`}
@@ -452,7 +436,7 @@ export default function CreateCoursePage() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
         <div className="mb-4 md:mb-0">
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3 text-gray-900">
-            <BookOpen className="h-8 w-8 text-[#05d6ac]" />
+            <BookOpen className="h-8 w-8 text-[#00404a]" />
             Create Course
           </h1>
           <p className="text-gray-500 font-light mt-1">
@@ -464,7 +448,7 @@ export default function CreateCoursePage() {
           <Button
             variant="outline"
             onClick={() => router.push('/admin/dashboard')}
-            className="rounded-full bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 transition-all duration-300 hover:border-[#05d6ac] hover:text-[#05d6ac]"
+            className="rounded-full bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 transition-all duration-300 hover:border-[#00404a] hover:text-[#00404a]"
           >
             Go to Dashboard
           </Button>
@@ -473,7 +457,7 @@ export default function CreateCoursePage() {
               variant="outline"
               onClick={prevStep}
               disabled={submitting}
-              className="rounded-full bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 transition-all duration-300 hover:border-[#05d6ac] hover:text-[#05d6ac]"
+              className="rounded-full bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 transition-all duration-300 hover:border-[#00404a] hover:text-[#00404a]"
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
               Back
@@ -483,7 +467,7 @@ export default function CreateCoursePage() {
             <Button
               onClick={nextStep}
               disabled={submitting}
-              className="rounded-full bg-[#05d6ac] text-white font-semibold shadow-md hover:bg-[#04b895] transition-colors"
+              className="rounded-full bg-[#00404a] text-white font-semibold shadow-md hover:bg-[#005965] transition-colors"
             >
               Next
               <ChevronRight className="h-4 w-4 ml-1" />
@@ -493,7 +477,7 @@ export default function CreateCoursePage() {
             <Button
               onClick={handleCreate}
               disabled={submitting}
-              className="rounded-full bg-[#05d6ac] text-white font-semibold shadow-md hover:bg-[#04b895] transition-colors"
+              className="rounded-full bg-[#00404a] text-white font-semibold shadow-md hover:bg-[#005965] transition-colors"
             >
               {submitting ? (
                 <>
@@ -522,9 +506,9 @@ export default function CreateCoursePage() {
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors duration-300 ${
                       active
-                        ? 'bg-[#05d6ac] border-[#05d6ac] text-white shadow-lg'
+                        ? 'bg-[#00404a] border-[#00404a] text-white shadow-lg'
                         : done
-                        ? 'bg-[#D3F5E7] border-[#05d6ac] text-[#05d6ac]'
+                        ? 'bg-[#e6f2f3] border-[#005965] text-[#005965]'
                         : 'bg-white border-gray-300 text-gray-500'
                     }`}
                   >
@@ -567,7 +551,7 @@ export default function CreateCoursePage() {
                     onChange={(e) =>
                       updateCourseField('title', e.target.value)
                     }
-                    className="border-gray-300 focus:border-[#05d6ac] focus:ring-1 focus:ring-[#05d6ac] rounded-lg"
+                    className="border-gray-300 focus:border-[#00404a] focus:ring-1 focus:ring-[#00404a] rounded-lg"
                   />
                 </div>
                 <div className="space-y-2">
@@ -580,7 +564,7 @@ export default function CreateCoursePage() {
                     onChange={(e) =>
                       updateCourseField('category', e.target.value)
                     }
-                    className="border-gray-300 focus:border-[#05d6ac] focus:ring-1 focus:ring-[#05d6ac] rounded-lg"
+                    className="border-gray-300 focus:border-[#00404a] focus:ring-1 focus:ring-[#00404a] rounded-lg"
                   />
                 </div>
                 <div className="space-y-2">
@@ -594,7 +578,7 @@ export default function CreateCoursePage() {
                           key={lvl}
                           className={`cursor-pointer capitalize font-medium tracking-wide transition-all duration-300 text-sm py-1 px-3 ${
                             form.level === lvl
-                              ? 'bg-[#05d6ac] text-white shadow-md'
+                              ? 'bg-[#00404a] text-white shadow-md'
                               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                           }`}
                           onClick={() => updateCourseField('level', lvl)}
@@ -604,20 +588,6 @@ export default function CreateCoursePage() {
                       )
                     )}
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-gray-500 uppercase tracking-wide text-xs">
-                    Price (USD)
-                  </Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={Number(form.price || 0)}
-                    onChange={(e) =>
-                      updateCourseField('price', Number(e.target.value || 0))
-                    }
-                    className="border-gray-300 focus:border-[#05d6ac] focus:ring-1 focus:ring-[#05d6ac] rounded-lg"
-                  />
                 </div>
               </div>
               {/* Thumbnail Upload Section */}
@@ -672,7 +642,7 @@ export default function CreateCoursePage() {
                   onChange={(e) =>
                     updateCourseField('description', e.target.value)
                   }
-                  className="border-gray-300 focus:border-[#05d6ac] focus:ring-1 focus:ring-[#05d6ac] rounded-lg"
+                  className="border-gray-300 focus:border-[#00404a] focus:ring-1 focus:ring-[#00404a] rounded-lg"
                 />
               </div>
             </CardContent>
@@ -688,7 +658,7 @@ export default function CreateCoursePage() {
                 type="button"
                 onClick={addModule}
                 size="sm"
-                className="rounded-full bg-[#05d6ac] text-white hover:bg-[#04b895] shadow-md transition-colors"
+                className="rounded-full bg-[#00404a] text-white hover:bg-[#005965] shadow-md transition-colors"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add Module
@@ -716,7 +686,7 @@ export default function CreateCoursePage() {
                         onChange={(e) =>
                           updateModuleField(mIndex, 'title', e.target.value)
                         }
-                        className="border-gray-300 focus:border-[#05d6ac] focus:ring-1 focus:ring-[#05d6ac] rounded-lg"
+                        className="border-gray-300 focus:border-[#00404a] focus:ring-1 focus:ring-[#00404a] rounded-lg"
                       />
                     </div>
                     <div className="md:col-span-1 space-y-2">
@@ -734,7 +704,7 @@ export default function CreateCoursePage() {
                             Number(e.target.value || 1)
                           )
                         }
-                        className="border-gray-300 focus:border-[#05d6ac] focus:ring-1 focus:ring-[#05d6ac] rounded-lg"
+                        className="border-gray-300 focus:border-[#00404a] focus:ring-1 focus:ring-[#00404a] rounded-lg"
                       />
                     </div>
                     <div className="md:col-span-1 flex justify-end">
@@ -749,208 +719,6 @@ export default function CreateCoursePage() {
                       </Button>
                     </div>
                   </div>
-                  <Separator className="bg-gray-200" />
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-medium tracking-wide text-gray-700">
-                      Topics in Module {mIndex + 1}
-                    </h4>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => addTopic(mIndex)}
-                      className="rounded-full border border-gray-300 text-gray-500 hover:text-[#05d6ac] hover:border-[#05d6ac] transition-colors"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Topic
-                    </Button>
-                  </div>
-                  <div className="space-y-4">
-                    {mod.topics.length === 0 && (
-                      <div className="text-sm text-gray-500 font-light">
-                        No topics yet—click "Add Topic" to begin.
-                      </div>
-                    )}
-                    {mod.topics.map((topic, tIndex) => (
-                      <div
-                        key={`topic-${mIndex}-${tIndex}`}
-                        className="rounded-lg border border-gray-200 p-4 space-y-3 bg-white shadow-sm"
-                      >
-                        <div className="grid md:grid-cols-6 gap-4 items-end">
-                          <div className="md:col-span-3 space-y-2">
-                            <Label className="text-gray-500 uppercase tracking-wide text-xs">
-                              Topic Title
-                            </Label>
-                            <Input
-                              placeholder={`Topic ${tIndex + 1} title`}
-                              value={topic.title}
-                              onChange={(e) =>
-                                updateTopicField(
-                                  mIndex,
-                                  tIndex,
-                                  'title',
-                                  e.target.value
-                                )
-                              }
-                              className="border-gray-300 focus:border-[#05d6ac] focus:ring-1 focus:ring-[#05d6ac] rounded-lg"
-                            />
-                          </div>
-                          <div className="md:col-span-1 space-y-2">
-                            <Label className="text-gray-500 uppercase tracking-wide text-xs">
-                              Order
-                            </Label>
-                            <Input
-                              type="number"
-                              min={1}
-                              value={Number(topic.order || tIndex + 1)}
-                              onChange={(e) =>
-                                updateTopicField(
-                                  mIndex,
-                                  tIndex,
-                                  'order',
-                                  Number(e.target.value || 1)
-                                )
-                              }
-                              className="border-gray-300 focus:border-[#05d6ac] focus:ring-1 focus:ring-[#05d6ac] rounded-lg"
-                            />
-                          </div>
-                          <div className="md:col-span-2 flex justify-end">
-                            <Button
-                              type="button"
-                              size="icon"
-                              onClick={() => removeTopic(mIndex, tIndex)}
-                              aria-label="Remove topic"
-                              className="bg-transparent border-none text-red-500 hover:bg-red-50 hover:text-red-600 rounded-full transition-colors"
-                            >
-                              <Trash2 className="h-5 w-5" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-gray-500 uppercase tracking-wide text-xs">
-                            Content/Notes (optional)
-                          </Label>
-                          <Textarea
-                            rows={3}
-                            placeholder="Short description..."
-                            value={topic.content || ''}
-                            onChange={(e) =>
-                              updateTopicField(
-                                mIndex,
-                                tIndex,
-                                'content',
-                                e.target.value
-                              )
-                            }
-                            className="border-gray-300 focus:border-[#05d6ac] focus:ring-1 focus:ring-[#05d6ac] rounded-lg"
-                          />
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label className="text-gray-500 uppercase tracking-wide text-xs">
-                              Upload Video (optional)
-                            </Label>
-                            <Input
-                              type="file"
-                              accept="video/*"
-                              onChange={(e) =>
-                                updateTopicField(
-                                  mIndex,
-                                  tIndex,
-                                  'videoFile',
-                                  e.target.files?.[0] || null
-                                )
-                              }
-                              className="border-gray-300 rounded-lg text-gray-500 file:bg-gray-100 file:text-gray-700 file:border-none file:rounded-full file:px-4 file:py-2"
-                            />
-                            {topic.videoFile && (
-                              <Badge className="bg-gray-100 text-gray-700 text-xs py-1 px-2 rounded-full border border-gray-200">
-                                <Upload className="h-3 w-3 mr-1" />
-                                {topic.videoFile.name}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-gray-500 uppercase tracking-wide text-xs">
-                              Assignment (optional)
-                            </Label>
-                            <Input
-                              placeholder="Assignment Title"
-                              value={topic.assignment?.title || ''}
-                              onChange={(e) =>
-                                updateTopicField(mIndex, tIndex, 'assignment', {
-                                  ...(topic.assignment || {}),
-                                  title: e.target.value,
-                                })
-                              }
-                              className="border-gray-300 focus:border-[#05d6ac] focus:ring-1 focus:ring-[#05d6ac] rounded-lg"
-                            />
-                            <Textarea
-                              rows={2}
-                              placeholder="Assignment Description"
-                              value={topic.assignment?.description || ''}
-                              onChange={(e) =>
-                                updateTopicField(mIndex, tIndex, 'assignment', {
-                                  ...(topic.assignment || {}),
-                                  description: e.target.value,
-                                })
-                              }
-                              className="border-gray-300 focus:border-[#05d6ac] focus:ring-1 focus:ring-[#05d6ac] rounded-lg"
-                            />
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="space-y-1">
-                                <Label className="text-gray-500 uppercase tracking-wide text-xs">
-                                  Points
-                                </Label>
-                                <Input
-                                  type="number"
-                                  min={1}
-                                  value={Number(topic.assignment?.points || 100)}
-                                  onChange={(e) =>
-                                    updateTopicField(
-                                      mIndex,
-                                      tIndex,
-                                      'assignment',
-                                      {
-                                        ...(topic.assignment || {}),
-                                        points: Number(e.target.value || 100),
-                                      }
-                                    )
-                                  }
-                                  className="border-gray-300 focus:border-[#05d6ac] focus:ring-1 focus:ring-[#05d6ac] rounded-lg"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-gray-500 uppercase tracking-wide text-xs">
-                                  Assignment File
-                                </Label>
-                                <Input
-                                  type="file"
-                                  onChange={(e) =>
-                                    updateTopicField(
-                                      mIndex,
-                                      tIndex,
-                                      'assignment',
-                                      {
-                                        ...(topic.assignment || {}),
-                                        file: e.target.files?.[0] || null,
-                                      }
-                                    )
-                                  }
-                                  className="border-gray-300 rounded-lg text-gray-500 file:bg-gray-100 file:text-gray-700 file:border-none file:rounded-full file:px-4 file:py-2"
-                                />
-                                {topic.assignment?.file && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    Selected: {topic.assignment.file.name}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               ))}
             </CardContent>
@@ -963,13 +731,13 @@ export default function CreateCoursePage() {
                 Topics & Media
               </CardTitle>
               <p className="text-sm text-gray-500 font-light mt-1">
-                Review topics, videos, and assignment attachments.
+                Add content and media for each topic.
               </p>
             </CardHeader>
             <CardContent className="space-y-6 p-6">
               {form.modules.length === 0 ? (
                 <div className="text-sm text-gray-500 font-light">
-                  No modules added yet.
+                  Please add at least one module in the previous step.
                 </div>
               ) : (
                 form.modules.map((mod, mIndex) => (
@@ -984,68 +752,208 @@ export default function CreateCoursePage() {
                       </Badge>
                     </div>
                     <div className="space-y-3">
-                      {(mod.topics || []).length === 0 ? (
-                        <div className="text-xs text-gray-500 font-light">
-                          No topics in this module.
-                        </div>
-                      ) : (
-                        mod.topics.map((t, tIndex) => (
-                          <div
-                            key={`topic-review-${mIndex}-${tIndex}`}
-                            className="border border-gray-200 rounded-lg p-4 bg-gray-50 shadow-sm"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="font-medium tracking-wide text-gray-800">
-                                <span className="text-gray-500">
-                                  Topic {tIndex + 1}:
-                                </span>{' '}
-                                {t.title || '—'}
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-medium tracking-wide text-gray-700">
+                          Topics
+                        </h4>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => addTopic(mIndex)}
+                          className="rounded-full border border-gray-300 text-gray-500 hover:text-[#00404a] hover:border-[#00404a] transition-colors"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Topic
+                        </Button>
+                      </div>
+                      <div className="space-y-4">
+                        {(mod.topics || []).length === 0 ? (
+                          <div className="text-sm text-gray-500 font-light">
+                            No topics yet—click "Add Topic" to begin.
+                          </div>
+                        ) : (
+                          mod.topics.map((topic, tIndex) => (
+                            <div
+                              key={`topic-${mIndex}-${tIndex}`}
+                              className="rounded-lg border border-gray-200 p-4 space-y-3 bg-gray-50 shadow-sm"
+                            >
+                              <div className="grid md:grid-cols-6 gap-4 items-end">
+                                <div className="md:col-span-3 space-y-2">
+                                  <Label className="text-gray-500 uppercase tracking-wide text-xs">
+                                    Topic Title
+                                  </Label>
+                                  <Input
+                                    placeholder={`Topic ${tIndex + 1} title`}
+                                    value={topic.title}
+                                    onChange={(e) =>
+                                      updateTopicField(
+                                        mIndex,
+                                        tIndex,
+                                        'title',
+                                        e.target.value
+                                      )
+                                    }
+                                    className="border-gray-300 focus:border-[#00404a] focus:ring-1 focus:ring-[#00404a] rounded-lg"
+                                  />
+                                </div>
+                                <div className="md:col-span-1 space-y-2">
+                                  <Label className="text-gray-500 uppercase tracking-wide text-xs">
+                                    Order
+                                  </Label>
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={Number(topic.order || tIndex + 1)}
+                                    onChange={(e) =>
+                                      updateTopicField(
+                                        mIndex,
+                                        tIndex,
+                                        'order',
+                                        Number(e.target.value || 1)
+                                      )
+                                    }
+                                    className="border-gray-300 focus:border-[#00404a] focus:ring-1 focus:ring-[#00404a] rounded-lg"
+                                  />
+                                </div>
+                                <div className="md:col-span-2 flex justify-end">
+                                  <Button
+                                    type="button"
+                                    size="icon"
+                                    onClick={() => removeTopic(mIndex, tIndex)}
+                                    aria-label="Remove topic"
+                                    className="bg-transparent border-none text-red-500 hover:bg-red-50 hover:text-red-600 rounded-full transition-colors"
+                                  >
+                                    <Trash2 className="h-5 w-5" />
+                                  </Button>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                {t.videoFile ? (
-                                  <Badge className="bg-[#D3F5E7] text-[#05d6ac] font-medium border border-[#05d6ac] text-xs py-1">
-                                    <Video className="h-3 w-3 mr-1" />
-                                    Video
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-gray-100 text-gray-500 font-light text-xs py-1">
-                                    No video
-                                  </Badge>
-                                )}
-                                {t.assignment?.file ? (
-                                  <Badge className="bg-[#D3F5E7] text-[#05d6ac] font-medium border border-[#05d6ac] text-xs py-1">
-                                    <ClipboardList className="h-3 w-3 mr-1" />
-                                    Assignment
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-gray-100 text-gray-500 font-light text-xs py-1">
-                                    No assignment
-                                  </Badge>
-                                )}
-                                <Badge className="bg-gray-100 text-gray-600 font-light border border-gray-200 text-xs py-1">
-                                  Order {t.order || tIndex + 1}
-                                </Badge>
+                              <div className="space-y-2">
+                                <Label className="text-gray-500 uppercase tracking-wide text-xs">
+                                  Content/Notes (optional)
+                                </Label>
+                                <Textarea
+                                  rows={3}
+                                  placeholder="Short description..."
+                                  value={topic.content || ''}
+                                  onChange={(e) =>
+                                    updateTopicField(
+                                      mIndex,
+                                      tIndex,
+                                      'content',
+                                      e.target.value
+                                    )
+                                  }
+                                  className="border-gray-300 focus:border-[#00404a] focus:ring-1 focus:ring-[#00404a] rounded-lg"
+                                />
+                              </div>
+                              <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label className="text-gray-500 uppercase tracking-wide text-xs">
+                                    Upload Video (optional)
+                                  </Label>
+                                  <Input
+                                    type="file"
+                                    accept="video/*"
+                                    onChange={(e) =>
+                                      updateTopicField(
+                                        mIndex,
+                                        tIndex,
+                                        'videoFile',
+                                        e.target.files?.[0] || null
+                                      )
+                                    }
+                                    className="border-gray-300 rounded-lg text-gray-500 file:bg-gray-100 file:text-gray-700 file:border-none file:rounded-full file:px-4 file:py-2"
+                                  />
+                                  {topic.videoFile && (
+                                    <Badge className="bg-gray-100 text-gray-700 text-xs py-1 px-2 rounded-full border border-gray-200">
+                                      <Video className="h-3 w-3 mr-1" />
+                                      {topic.videoFile.name}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="space-y-2">
+                                  <Label className="text-gray-500 uppercase tracking-wide text-xs">
+                                    Assignment (optional)
+                                  </Label>
+                                  <Input
+                                    placeholder="Assignment Title"
+                                    value={topic.assignment?.title || ''}
+                                    onChange={(e) =>
+                                      updateTopicField(mIndex, tIndex, 'assignment', {
+                                        ...(topic.assignment || {}),
+                                        title: e.target.value,
+                                      })
+                                    }
+                                    className="border-gray-300 focus:border-[#00404a] focus:ring-1 focus:ring-[#00404a] rounded-lg"
+                                  />
+                                  <Textarea
+                                    rows={2}
+                                    placeholder="Assignment Description"
+                                    value={topic.assignment?.description || ''}
+                                    onChange={(e) =>
+                                      updateTopicField(mIndex, tIndex, 'assignment', {
+                                        ...(topic.assignment || {}),
+                                        description: e.target.value,
+                                      })
+                                    }
+                                    className="border-gray-300 focus:border-[#00404a] focus:ring-1 focus:ring-[#00404a] rounded-lg"
+                                  />
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="space-y-1">
+                                      <Label className="text-gray-500 uppercase tracking-wide text-xs">
+                                        Points
+                                      </Label>
+                                      <Input
+                                        type="number"
+                                        min={1}
+                                        value={Number(topic.assignment?.points || 100)}
+                                        onChange={(e) =>
+                                          updateTopicField(
+                                            mIndex,
+                                            tIndex,
+                                            'assignment',
+                                            {
+                                              ...(topic.assignment || {}),
+                                              points: Number(e.target.value || 100),
+                                            }
+                                          )
+                                        }
+                                        className="border-gray-300 focus:border-[#00404a] focus:ring-1 focus:ring-[#00404a] rounded-lg"
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <Label className="text-gray-500 uppercase tracking-wide text-xs">
+                                        Assignment File
+                                      </Label>
+                                      <Input
+                                        type="file"
+                                        onChange={(e) =>
+                                          updateTopicField(
+                                            mIndex,
+                                            tIndex,
+                                            'assignment',
+                                            {
+                                              ...(topic.assignment || {}),
+                                              file: e.target.files?.[0] || null,
+                                            }
+                                          )
+                                        }
+                                        className="border-gray-300 rounded-lg text-gray-500 file:bg-gray-100 file:text-gray-700 file:border-none file:rounded-full file:px-4 file:py-2"
+                                      />
+                                      {topic.assignment?.file && (
+                                        <div className="text-xs text-gray-500 mt-1">
+                                          Selected: {topic.assignment.file.name}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                            {t.assignment?.title && (
-                              <div className="mt-2 text-sm text-gray-600 font-light">
-                                <span className="font-semibold text-gray-800">
-                                  Assignment:
-                                </span>{' '}
-                                {t.assignment.title}{' '}
-                                <span className="text-gray-500">
-                                  ({t.assignment.points || 100} pts)
-                                </span>
-                              </div>
-                            )}
-                            {t.content && (
-                              <p className="text-sm text-gray-500 mt-2">
-                                {t.content}
-                              </p>
-                            )}
-                          </div>
-                        ))
-                      )}
+                          ))
+                        )}
+                      </div>
                     </div>
                     {mIndex < form.modules.length - 1 && (
                       <Separator className="bg-gray-200" />
@@ -1089,14 +997,6 @@ export default function CreateCoursePage() {
                     {form.level}
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-sm text-gray-500 uppercase tracking-wide text-xs">
-                    Price
-                  </div>
-                  <div className="font-semibold text-gray-800">
-                    ${Number(form.price || 0)}
-                  </div>
-                </div>
               </div>
               {/* Thumbnail Preview in Review */}
               {thumbnailPreview && (
@@ -1111,7 +1011,7 @@ export default function CreateCoursePage() {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <Badge className="bg-[#D3F5E7] text-[#05d6ac] font-medium border border-[#05d6ac] text-xs py-1">
+                  <Badge className="bg-[#e6f2f3] text-[#005965] font-medium border border-[#005965] text-xs py-1">
                     <Image className="h-3 w-3 mr-1" />
                     Thumbnail Added
                   </Badge>
@@ -1130,77 +1030,83 @@ export default function CreateCoursePage() {
                 <div className="font-bold tracking-wide text-lg text-gray-900">
                   Modules & Topics
                 </div>
-                {form.modules.map((m, mi) => (
-                  <div key={`review-final-${mi}`} className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="font-semibold tracking-wide text-gray-800">
-                        <span className="text-gray-500">Module {mi + 1}:</span>{' '}
-                        {m.title || '—'}
-                      </div>
-                      <Badge className="bg-gray-100 text-gray-600 font-light border border-gray-200">
-                        Order {m.order || mi + 1}
-                      </Badge>
-                    </div>
-                    <div className="space-y-2 pl-4">
-                      {(m.topics || []).map((t, ti) => (
-                        <div
-                          key={`review-final-topic-${mi}-${ti}`}
-                          className="p-3 rounded-lg border border-gray-200 bg-gray-50 shadow-sm"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="font-medium tracking-wide text-gray-800">
-                              <span className="text-gray-500">
-                                Topic {ti + 1}:
-                              </span>{' '}
-                              {t.title || '—'}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {t.videoFile ? (
-                                <Badge className="bg-[#D3F5E7] text-[#05d6ac] font-medium border border-[#05d6ac] text-xs py-1">
-                                  <Video className="h-3 w-3 mr-1" />
-                                  Video
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-gray-100 text-gray-500 font-light text-xs py-1">
-                                  No video
-                                </Badge>
-                              )}
-                              {t.assignment?.file ? (
-                                <Badge className="bg-[#D3F5E7] text-[#05d6ac] font-medium border border-[#05d6ac] text-xs py-1">
-                                  <ClipboardList className="h-3 w-3 mr-1" />
-                                  Assignment
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-gray-100 text-gray-500 font-light text-xs py-1">
-                                  No assignment
-                                </Badge>
-                              )}
-                              <Badge className="bg-gray-100 text-gray-600 font-light border border-gray-200 text-xs py-1">
-                                Order {t.order || ti + 1}
-                              </Badge>
-                            </div>
-                          </div>
-                          {!!t.assignment?.title && (
-                            <div className="text-sm mt-1 text-gray-600 font-light">
-                              <span className="font-medium text-gray-800">
-                                Assignment:
-                              </span>{' '}
-                              {t.assignment.title}{' '}
-                              <span className="text-gray-500">
-                                ({t.assignment.points || 100} pts)
-                              </span>
-                            </div>
-                          )}
-                          {t.content && (
-                            <p className="text-sm text-gray-500 mt-1">
-                              {t.content}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                {form.modules.length === 0 ? (
+                  <div className="text-sm text-gray-500 font-light">
+                    No modules or topics added.
                   </div>
-                ))}
+                ) : (
+                  form.modules.map((m, mi) => (
+                    <div key={`review-final-${mi}`} className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="font-semibold tracking-wide text-gray-800">
+                          <span className="text-gray-500">Module {mi + 1}:</span>{' '}
+                          {m.title || '—'}
+                        </div>
+                        <Badge className="bg-gray-100 text-gray-600 font-light border border-gray-200">
+                          Order {m.order || mi + 1}
+                        </Badge>
+                      </div>
+                      <div className="space-y-2 pl-4">
+                        {(m.topics || []).map((t, ti) => (
+                          <div
+                            key={`review-final-topic-${mi}-${ti}`}
+                            className="p-3 rounded-lg border border-gray-200 bg-gray-50 shadow-sm"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium tracking-wide text-gray-800">
+                                <span className="text-gray-500">
+                                  Topic {ti + 1}:
+                                </span>{' '}
+                                {t.title || '—'}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {t.videoFile ? (
+                                  <Badge className="bg-[#e6f2f3] text-[#005965] font-medium border border-[#005965] text-xs py-1">
+                                    <Video className="h-3 w-3 mr-1" />
+                                    Video
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-gray-100 text-gray-500 font-light text-xs py-1">
+                                    No video
+                                  </Badge>
+                                )}
+                                {t.assignment?.file ? (
+                                  <Badge className="bg-[#e6f2f3] text-[#005965] font-medium border border-[#005965] text-xs py-1">
+                                    <ClipboardList className="h-3 w-3 mr-1" />
+                                    Assignment
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-gray-100 text-gray-500 font-light text-xs py-1">
+                                    No assignment
+                                  </Badge>
+                                )}
+                                <Badge className="bg-gray-100 text-gray-600 font-light border border-gray-200 text-xs py-1">
+                                  Order {t.order || ti + 1}
+                                </Badge>
+                              </div>
+                            </div>
+                            {!!t.assignment?.title && (
+                              <div className="text-sm mt-1 text-gray-600 font-light">
+                                <span className="font-medium text-gray-800">
+                                  Assignment:
+                                </span>{' '}
+                                {t.assignment.title}{' '}
+                                <span className="text-gray-500">
+                                  ({t.assignment.points || 100} pts)
+                                </span>
+                              </div>
+                            )}
+                            {t.content && (
+                              <p className="text-sm text-gray-500 mt-1">
+                                {t.content}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
               {submitting && submitProgress && (
                 <div className="text-sm text-gray-500 font-light mt-4">
@@ -1212,7 +1118,7 @@ export default function CreateCoursePage() {
                   variant="outline"
                   onClick={prevStep}
                   disabled={submitting}
-                  className="rounded-full bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 transition-all duration-300 hover:border-[#05d6ac] hover:text-[#05d6ac]"
+                  className="rounded-full bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 transition-all duration-300 hover:border-[#00404a] hover:text-[#00404a]"
                 >
                   <ChevronLeft className="h-4 w-4 mr-1" />
                   Back
@@ -1220,7 +1126,7 @@ export default function CreateCoursePage() {
                 <Button
                   onClick={handleCreate}
                   disabled={submitting}
-                  className="rounded-full bg-[#05d6ac] text-white font-semibold shadow-md hover:bg-[#04b895] transition-colors"
+                  className="rounded-full bg-[#00404a] text-white font-semibold shadow-md hover:bg-[#005965] transition-colors"
                 >
                   {submitting ? (
                     <>

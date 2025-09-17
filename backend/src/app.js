@@ -12,6 +12,7 @@ const videoRoutes = require('./routes/videoRoutes');
 const assignmentRoutes = require('./routes/assignmentRoutes');
 const progressRoutes = require('./routes/progressRoutes');
 const studentRoutes = require('./routes/studentRoutes');
+const trainerRoutes = require('./routes/trainerRoutes');
 
 const app = express();
 
@@ -31,7 +32,7 @@ app.use('/api', videoRoutes);
 app.use('/api', assignmentRoutes);
 app.use('/api', progressRoutes);
 app.use('/api', studentRoutes)
-
+app.use('/api', trainerRoutes);
 // health check
 app.get('/health', (_, res) => res.json({ success: true, message: 'OK' }));
 

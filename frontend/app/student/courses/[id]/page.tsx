@@ -311,7 +311,7 @@ export default function CourseDetailPageClient() {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900">No Course Selected</h2>
           <p className="text-gray-500 mt-2">Please navigate to a specific course page.</p>
-          <Button asChild className="mt-4 px-6 py-2 rounded-full font-semibold shadow-md bg-[#05d6ac] text-white hover:bg-[#04b895] transition-colors">
+          <Button asChild className="mt-4 px-6 py-2 rounded-full font-semibold shadow-md bg-[#00404a] text-white hover:bg-[#04b895] transition-colors">
             <Link href="/student/courses">Browse Courses</Link>
           </Button>
         </div>
@@ -322,7 +322,7 @@ export default function CourseDetailPageClient() {
   if (isLoading) {
     return (
       <div className={`${inter.className} min-h-screen flex items-center justify-center p-6 bg-gray-50 text-gray-800`}>
-        <Loader2 className="h-8 w-8 animate-spin text-[#05d6ac]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#00404a]" />
         <p className="ml-3 text-lg text-gray-600">Loading course data...</p>
       </div>
     );
@@ -335,7 +335,7 @@ export default function CourseDetailPageClient() {
           <h2 className="text-2xl font-bold text-gray-900">Error Loading Course</h2>
           <p className="text-gray-500">{error}</p>
           <div className="flex gap-4 justify-center">
-            <Button onClick={() => window.location.reload()} className="px-6 py-2 rounded-full font-semibold shadow-md bg-[#05d6ac] text-white hover:bg-[#04b895] transition-colors">Retry</Button>
+            <Button onClick={() => window.location.reload()} className="px-6 py-2 rounded-full font-semibold shadow-md bg-[#00404a] text-white hover:bg-[#04b895] transition-colors">Retry</Button>
             <Button asChild variant="outline" className="px-6 py-2 rounded-full font-semibold text-gray-700 border-gray-300 hover:bg-gray-100 transition-colors"><Link href="/">Go Home</Link></Button>
           </div>
         </div>
@@ -370,7 +370,7 @@ export default function CourseDetailPageClient() {
             <Menu className="h-5 w-5" />
           </Button>
           {/* DESKTOP BACK BUTTON */}
-          <Link href="/student/courses" className="hidden md:block hover:text-[#05d6ac] transition-colors duration-200">
+          <Link href="/student/courses" className="hidden md:block hover:text-[#00404a] transition-colors duration-200">
             <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-100 transition-colors rounded-full">
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -381,7 +381,7 @@ export default function CourseDetailPageClient() {
         </div>
         <div className="flex items-center gap-2 md:gap-4">
           <div className="text-sm text-gray-500 uppercase tracking-tight hidden md:block">Progress</div>
-          <Progress value={progress} className="h-2 w-24 md:w-32 bg-gray-200 rounded-full [&>div]:bg-[#05d6ac]" />
+          <Progress value={progress} className="h-2 w-24 md:w-32 bg-gray-200 rounded-full [&>div]:bg-[#00404a]" />
           <span className="font-semibold text-sm text-gray-700">{Math.round(progress)}%</span>
         </div>
       </Card>
@@ -423,12 +423,12 @@ export default function CourseDetailPageClient() {
                         variant="ghost"
                         onClick={() => { setSelectedTopic(t); setIsSidebarOpen(false); }}
                         className={`w-full justify-start text-left px-3 py-2 text-sm truncate rounded-lg transition-colors duration-200 hover:bg-gray-200 
-                          ${safeId(t) === safeId(selectedTopic) ? 'bg-gray-200 text-[#05d6ac] font-bold' : 'text-gray-700'}
+                          ${safeId(t) === safeId(selectedTopic) ? 'bg-gray-200 text-[#00404a] font-bold' : 'text-gray-700'}
                           ${t.isCompleted ? 'opacity-70' : ''}`}
                       >
                         <PlayCircle className="h-4 w-4 mr-2 flex-shrink-0" />
                         <span className="truncate">{t.title || `Topic ${ti + 1}`}</span>
-                        {t.isCompleted && <CheckCircle className="h-4 w-4 ml-2 text-[#05d6ac] flex-shrink-0" />}
+                        {t.isCompleted && <CheckCircle className="h-4 w-4 ml-2 text-[#00404a] flex-shrink-0" />}
                       </Button>
                     ))}
                   </div>
@@ -467,7 +467,7 @@ export default function CourseDetailPageClient() {
                   <Button
                     onClick={handleMarkComplete}
                     disabled={selectedTopic.isCompleted || isMarkingComplete}
-                    className="flex-shrink-0 w-full md:w-auto px-6 py-2 rounded-full font-semibold shadow-md bg-[#05d6ac] text-white hover:bg-[#04b895] transition-colors"
+                    className="flex-shrink-0 w-full md:w-auto px-6 py-2 rounded-full font-semibold shadow-md bg-[#00404a] text-white hover:bg-[#04b895] transition-colors"
                   >
                     {isMarkingComplete ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -496,7 +496,7 @@ export default function CourseDetailPageClient() {
                         {selectedTopic.assignment.description || 'No description provided.'}
                       </p>
                       {selectedTopic.assignment.fileUrl && (
-                        <Button asChild variant="outline" className="mb-4 w-full md:w-auto px-4 py-2 rounded-full font-semibold text-[#05d6ac] border-[#05d6ac] hover:bg-[#05d6ac]/10 transition-colors">
+                        <Button asChild variant="outline" className="mb-4 w-full md:w-auto px-4 py-2 rounded-full font-semibold text-[#00404a] border-[#00404a] hover:bg-[#00404a]/10 transition-colors">
                           <a href={`${selectedTopic.assignment.fileUrl}`} target="_blank" rel="noreferrer" download>
                             <Download className="mr-2 h-4 w-4" /> Download Assignment Template
                           </a>
@@ -512,12 +512,12 @@ export default function CourseDetailPageClient() {
                             id="assignment-file"
                             type="file"
                             onChange={(e) => setAssignmentFile(e.target.files?.[0] || null)}
-                            className="flex-grow rounded-lg border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#05d6ac] focus:ring-0"
+                            className="flex-grow rounded-lg border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#00404a] focus:ring-0"
                           />
                           <Button
                             onClick={handleAssignmentSubmit}
                             disabled={!assignmentFile || isSubmittingAssignment}
-                            className="min-w-[120px] px-6 py-2 rounded-full font-semibold shadow-md bg-[#05d6ac] text-white hover:bg-[#04b895] transition-colors"
+                            className="min-w-[120px] px-6 py-2 rounded-full font-semibold shadow-md bg-[#00404a] text-white hover:bg-[#04b895] transition-colors"
                           >
                             {isSubmittingAssignment ? (
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

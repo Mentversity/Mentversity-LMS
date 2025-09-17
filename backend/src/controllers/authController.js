@@ -5,6 +5,9 @@ const Course = require('../models/Course');
 const ApiResponse = require('../utils/ApiResponse');
 const catchAsync = require('../utils/catchAsync');
 const { generateToken } = require('../utils/generateToken');
+const { sendAccountEmail } = require('../utils/sendEmail');
+const { accountWelcomeEmail } = require('../utils/emailTemplates');
+
 
 // @desc Login user
 exports.login = catchAsync(async (req, res) => {
@@ -59,7 +62,115 @@ exports.me = catchAsync(async (req, res) => {
   res.json(ApiResponse.ok({ user }));
 });
 
-// @desc Register or enroll student (Admin only)
+// controller.js (or appropriate controller file)
+
+exports.registerTrainer = catchAsync(async (req, res) => {
+  const { email, password, name, assignedCourseIds = [] } = req.body;
+  console.log('Request body:', req.body);
+
+  if (!email) {
+    return res.status(400).json(ApiResponse.fail('Email is required.'));
+  }
+
+  if (req.user.role !== 'admin') {
+    return res.status(403).json(ApiResponse.fail('Only admins can manage trainer assignments.'));
+  }
+
+  let user = await User.findOne({ email });
+  let message = '';
+  let statusCode = 200;
+  let isNewUser = false;
+
+  // ✅ Validate provided course IDs and filter for valid ones
+  let validCourseObjectIds = [];
+  let courses = [];
+  if (assignedCourseIds.length > 0) {
+    courses = await Course.find({ _id: { $in: assignedCourseIds } });
+    validCourseObjectIds = courses.map(c => c._id);
+
+    if (validCourseObjectIds.length !== assignedCourseIds.length) {
+      console.warn('Some provided course IDs were invalid or not found.');
+    }
+  }
+
+  console.log('Valid course IDs:', validCourseObjectIds);
+
+  // ✅ Case 1: User already exists
+  if (user) {
+    if (user.role !== 'trainer') {
+      return res.status(400).json(ApiResponse.fail(`User with email ${email} is not a trainer. Cannot modify assignments.`));
+    }
+
+    // Add new valid course IDs to the existing trainer's teachingCourses array (avoid duplicates)
+    user.teachingCourses = [...new Set([...(user.teachingCourses || []), ...validCourseObjectIds])];
+    await user.save();
+    console.log(`Existing trainer ${user._id} updated with new courses.`);
+
+    message = 'Existing trainer assigned to additional courses successfully.';
+  } else {
+    // ✅ Case 2: New trainer registration
+    if (!password) {
+      return res.status(400).json(ApiResponse.fail('Password is required for new trainer registration.'));
+    }
+
+    user = await User.create({
+      email,
+      password,
+      role: 'trainer',
+      teachingCourses: validCourseObjectIds,
+      name: name || `Trainer-${Date.now()}`
+    });
+
+    console.log(`New trainer ${user._id} created and assigned to courses.`);
+
+    message = 'New trainer registered and assigned to courses successfully.';
+    statusCode = 201;
+    isNewUser = true;
+  }
+
+  // ✅ Update each Course to include this trainer in the `trainers` array (no duplicates)
+  if (validCourseObjectIds.length > 0) {
+    try {
+      await Course.updateMany(
+        { _id: { $in: validCourseObjectIds } },
+        { $addToSet: { trainers: user._id } }  // <-- $addToSet prevents duplicates
+      );
+      console.log(`Courses updated with trainer ${user._id}.`);
+    } catch (updateError) {
+      console.error('Failed to update Course documents:', updateError);
+    }
+  }
+
+  // ✅ Send welcome email
+  try {
+    await sendAccountEmail({
+      to: user.email,
+      subject: 'Welcome to Mentversity - Trainer Registration',
+      html: accountWelcomeEmail({
+        name: user.name,
+        email: user.email,
+        password: isNewUser ? password : '',
+        role: 'trainer',
+        courses: courses.map(c => c.title)
+      }),
+    });
+    console.log(`Registration email sent to trainer ${user.email}`);
+  } catch (emailErr) {
+    console.error('Could not send trainer registration email:', emailErr);
+  }
+
+  res.status(statusCode).json(ApiResponse.ok({
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      teachingCourses: user.teachingCourses
+    }
+  }, message));
+});
+
+
 exports.registerStudent = catchAsync(async (req, res) => {
   const { email, password, name, courseIds = [] } = req.body;
 
@@ -73,8 +184,9 @@ exports.registerStudent = catchAsync(async (req, res) => {
 
   // Validate provided course IDs
   let validCourseObjectIds = [];
+  let courses = [];
   if (courseIds.length > 0) {
-    const courses = await Course.find({ _id: { $in: courseIds } });
+    courses = await Course.find({ _id: { $in: courseIds } });
     validCourseObjectIds = courses.map(c => c._id);
 
     if (validCourseObjectIds.length !== courseIds.length) {
@@ -85,6 +197,7 @@ exports.registerStudent = catchAsync(async (req, res) => {
   let user = await User.findOne({ email });
   let message = '';
   let statusCode = 200;
+  let isNewUser = false;
 
   if (user) {
     // Case 1: User already exists
@@ -92,7 +205,7 @@ exports.registerStudent = catchAsync(async (req, res) => {
       return res.status(400).json(ApiResponse.fail(`User with email ${email} is not a student. Cannot modify enrollment.`));
     }
 
-    // Add new valid course IDs to the existing student's enrolledCourses array
+    // Add new valid course IDs to existing student's enrolledCourses array (avoid duplicates)
     user = await User.findByIdAndUpdate(
       user._id,
       { $addToSet: { enrolledCourses: { $each: validCourseObjectIds } } },
@@ -101,7 +214,7 @@ exports.registerStudent = catchAsync(async (req, res) => {
 
     message = 'Existing student enrolled in additional courses successfully.';
   } else {
-    // Case 2: New user registration
+    // Case 2: New student registration
     if (!password) {
       return res.status(400).json(ApiResponse.fail('Password is required for new student registration.'));
     }
@@ -115,20 +228,41 @@ exports.registerStudent = catchAsync(async (req, res) => {
     });
 
     newUser.password = undefined; // Hide password from response
-    user = newUser; // Use newUser for the response
+    user = newUser;
     message = 'New student registered and enrolled successfully.';
     statusCode = 201;
+    isNewUser = true;
   }
 
-  // --- NEW LOGIC: Update the Course documents with the student's ID ---
+  // Update the Course documents' enrolledStudents field (add user._id if not present)
   if (validCourseObjectIds.length > 0) {
-    await Course.updateMany(
-      { _id: { $in: validCourseObjectIds } }, // Find courses by the valid IDs
-      { $addToSet: { enrolledStudents: user._id } } // Add the student's ID to their enrolledStudents array
-    );
-    console.log(`Student ${user._id} added to enrolledStudents for courses: ${validCourseObjectIds.join(', ')}`);
+    try {
+      await Course.updateMany(
+        { _id: { $in: validCourseObjectIds } },
+        { $addToSet: { enrolledStudents: user._id } }
+      );
+      console.log(`Student ${user._id} added to enrolledStudents for courses: ${validCourseObjectIds.join(', ')}`);
+    } catch (updateError) {
+      console.error('Failed to update Course documents with enrolled students:', updateError);
+    }
   }
-  // --- END NEW LOGIC ---
+
+  try {
+    await sendAccountEmail({
+      to: user.email,
+      subject: 'Welcome to Mentversity - Student Registration',
+      html: accountWelcomeEmail({
+        name: user.name,
+        email: user.email,
+        password: isNewUser ? password : '',
+        role: 'student',
+        courses: courses.map(c => c.title)
+      }),
+    });
+    console.log(`Registration email sent to student ${user.email}`);
+  } catch (emailErr) {
+    console.error('Could not send student registration email:', emailErr);
+  }
 
   res.status(statusCode).json(ApiResponse.ok({
     user: {
@@ -140,7 +274,6 @@ exports.registerStudent = catchAsync(async (req, res) => {
     }
   }, message));
 });
-
 
 // @desc Logout
 exports.logout = catchAsync(async (req, res) => {

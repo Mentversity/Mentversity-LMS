@@ -2,7 +2,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: "admin" | "student";
+  role: "admin" | "student" | "trainer";
   avatar?: string;
 }
 
@@ -11,12 +11,10 @@ export interface Course {
   title: string;
   description: string;
   thumbnail: string;
-  instructor: string;
-  duration: string;
+  category: string;
   level: "beginner" | "intermediate" | "advanced";
-  price: number;
-  rating: number;
   enrolledStudents: [];
+  trainers: User[];
   modules: Module[];
   createdAt: string;
   updatedAt: string;

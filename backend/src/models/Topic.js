@@ -18,4 +18,6 @@ const topicSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+topicSchema.index({ module: 1, order: 1 }, { unique: true }); 
+
 module.exports = mongoose.model('Topic', topicSchema);

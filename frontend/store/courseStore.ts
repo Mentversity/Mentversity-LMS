@@ -21,6 +21,7 @@ export const useCourseStore = create<CourseStore>((set, get) => ({
     try {
       const response = await coursesApi.getAll();
       const courses = response.data.courses;
+      console.log("Fetched courses:", courses);
       set({ courses, isLoading: false });
     } catch (error) {
       console.error("Error fetching courses:", error);

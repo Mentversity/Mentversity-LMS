@@ -9,11 +9,9 @@ const fileFilter = (_, file, cb) => {
   cb(null, true);
 };
 
-// Set file size limit to 200MB
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
-  limits: { fileSize: 1024 * 1024 * 200 }, // 200MB
 });
 
 module.exports = { upload };

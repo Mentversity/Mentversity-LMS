@@ -29,7 +29,6 @@ export const useAuthStore = create<AuthStore>()(
 
           // Fetch latest user info from /me to be 100% sure
           const meRes = await authApi.me(token);
-          console.log("User info after login:", meRes.data.data.user);
 
           set({
             user: meRes.data.data.user,

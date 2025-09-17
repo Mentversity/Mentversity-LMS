@@ -5,7 +5,11 @@ const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
+    name: { 
+      type: String, 
+      required: true, 
+      trim: true 
+    },
     email: {
       type: String,
       required: true,
@@ -21,21 +25,30 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['admin', 'student'],
+      enum: ['admin', 'trainer', 'student'], // ✅ added trainer role
       default: 'student'
     },
-    // FIX: Add the enrolledCourses field to the schema
+
+    // Courses a student is enrolled in
     enrolledCourses: [
       {
         type: mongoose.Schema.ObjectId,
-        ref: 'Course', // This references your Course model
-      },
+        ref: 'Course'
+      }
+    ],
+
+    // Courses a trainer is teaching
+    teachingCourses: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: 'Course'
+      }
     ],
   },
   { timestamps: true }
 );
 
-// Hash password before save
+// Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);

@@ -25,9 +25,8 @@ const nunitoSans = Nunito_Sans({
 
 export default function StudentDashboard() {
   const { courses, fetchCourses } = useCourseStore();
-  const { fetchAllProgress } = useProgressStore();
+  const { progress, fetchAllProgress } = useProgressStore();
   const { user } = useAuthStore();
-  console.log('courses', courses);
 
   useEffect(() => {
     fetchCourses();
@@ -37,34 +36,30 @@ export default function StudentDashboard() {
   const coursesArray = Array.isArray(courses) ? courses : [];
   const enrolledCourses = coursesArray.slice(0, 3);
 
-  // Mock data for progress - used to render the Progress bar
-  const mockProgress: Record<string, number> = {
-    'course-1': 75,
-    'course-2': 45,
-    'course-3': 90,
-  };
-
+  console.log(courses)
   return (
-    <div className={`${nunitoSans.className} space-y-8 bg-gray-100 p-8 rounded-2xl`}>
+    <div
+      className={`${nunitoSans.className} space-y-8 bg-gray-50 p-8 rounded-2xl`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900">
+          <h1 className="text-4xl font-extrabold tracking-tight text-[#00404a]">
             Welcome back, {user?.name ? user.name.split(' ')[0] : 'Learner'}!
           </h1>
-          <p className="text-gray-500 font-normal mt-1">
-            Continue your learning journey with Mentversity
+          <p className="text-gray-600 font-normal mt-1">
+            Continue your learning journey with Mentversity 🚀
           </p>
         </div>
         <Link href="/student/courses">
-          <Button className="bg-emerald-500 text-white font-semibold rounded-full px-6 py-3 shadow-md transition-transform hover:scale-105 hover:bg-emerald-600">
+          <Button className="bg-[#00404a] text-white font-semibold rounded-full px-6 py-3 shadow-md transition-transform hover:scale-105 hover:bg-[#005965]">
             <BookOpen className="h-4 w-4 mr-2" />
             Browse Courses
           </Button>
         </Link>
       </div>
 
-      {/* Stats - This section is simplified to look good without backend data */}
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Courses"
@@ -79,17 +74,16 @@ export default function StudentDashboard() {
           subtitle="Keep going!"
         />
         <StatCard
-          title="New Feature"
-          value="Quizzes"
-          icon={<Sparkles />}
-          subtitle="Test your knowledge"
+          title="Achievements"
+          value="5"
+          icon={<Award />}
+          subtitle="Certificates Earned"
         />
-        {/* New motivational card */}
         <StatCard
-          title="Student of the Month"
-          value="Alex R."
+          title="Motivation"
+          value="🔥 Active"
           icon={<Trophy />}
-          subtitle="Keep up the great work!"
+          subtitle="Keep it up!"
         />
       </div>
 
@@ -97,22 +91,31 @@ export default function StudentDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* My Courses */}
         <div className="lg:col-span-2 p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-5 flex items-center gap-2">
-            <PlayCircle className="h-6 w-6 text-emerald-500" /> My Courses
+          <h2 className="text-2xl font-bold tracking-tight text-[#00404a] mb-5 flex items-center gap-2">
+            <PlayCircle className="h-6 w-6 text-[#005965]" /> My Courses
           </h2>
           <div className="space-y-4">
             {enrolledCourses.length > 0 ? (
-              enrolledCourses.map((course, index) => {
-                const courseProgress = mockProgress[`course-${index + 1}`] || 0;
+              enrolledCourses.map((course) => {
+                const courseProgress =
+                  progress?.[course._id]?.percentage || 0;
+
+                // Trainers: join all trainer names (array)
+                const trainers = Array.isArray(course.trainers)
+                  ? course.trainers.map((t: any) => t?.name).filter(Boolean)
+                  : [];
+                const trainerNames =
+                  trainers.length > 0 ? trainers.join(', ') : 'Unknown Instructor';
+
                 return (
                   <div
-                    key={course.id || `course-${index}`}
+                    key={course._id}
                     className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition shadow-sm hover:shadow-md cursor-pointer"
                   >
                     <div className="flex items-center space-x-4 w-full sm:w-auto mb-4 sm:mb-0">
                       <div className="w-16 h-12 rounded-lg flex items-center justify-center bg-emerald-100 overflow-hidden">
                         <img
-                          src={course.thumbnail.url || '/placeholder-course.png'}
+                          src={course.thumbnail?.url || '/placeholder-course.png'}
                           alt={course.title}
                           className="w-full h-full object-cover"
                         />
@@ -122,7 +125,7 @@ export default function StudentDashboard() {
                           {course.title}
                         </h3>
                         <p className="text-sm text-gray-500 mt-1">
-                          {course.instructor || 'Unknown Instructor'}
+                          {trainerNames}
                         </p>
                       </div>
                     </div>
@@ -131,16 +134,16 @@ export default function StudentDashboard() {
                         <Progress
                           value={courseProgress}
                           className="h-2 rounded-full bg-gray-200"
-                          indicatorClassName="bg-emerald-500"
+                          indicatorClassName="bg-[#00404a]"
                         />
                       </div>
                       <span className="text-sm font-semibold text-gray-600 w-10 text-right">
                         {courseProgress}%
                       </span>
-                      <Link href={`/student/courses/${course.id}`}>
+                      <Link href={`/student/courses/${course._id}`}>
                         <Button
                           size="sm"
-                          className="bg-emerald-500 text-white font-semibold rounded-full px-4 py-2 transition-transform hover:scale-105 hover:bg-emerald-600"
+                          className="bg-[#00404a] text-white font-semibold rounded-full px-4 py-2 transition-transform hover:scale-105 hover:bg-[#005965]"
                         >
                           Continue
                         </Button>
@@ -154,7 +157,7 @@ export default function StudentDashboard() {
                 <BookOpen className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                 <p className="font-medium">No enrolled courses yet</p>
                 <Link href="/student/courses">
-                  <Button className="mt-4 bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100">
+                  <Button className="mt-4 bg-[#00404a] text-white rounded-full hover:bg-[#005965]">
                     Browse Courses
                   </Button>
                 </Link>
@@ -163,31 +166,31 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Highlights Section */}
+        {/* Highlights */}
         <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-5 flex items-center gap-2">
-            <Star className="h-6 w-6 text-yellow-500" /> Highlights
+          <h2 className="text-2xl font-bold tracking-tight text-[#00404a] mb-5 flex items-center gap-2">
+            <Star className="h-6 w-6 text-[#005965]" /> Highlights
           </h2>
           <div className="space-y-4">
             <HighlightItem
               title="Welcome to Mentversity!"
-              subtitle="Your new learning journey starts now."
-              icon={<Star />}
-            />
-            <HighlightItem
-              title="New Courses Added"
-              subtitle="Discover the latest topics and skills."
+              subtitle="Your journey starts now."
               icon={<Sparkles />}
             />
             <HighlightItem
+              title="New Courses Added"
+              subtitle="Check out fresh topics."
+              icon={<BookOpen />}
+            />
+            <HighlightItem
               title="Support Center"
-              subtitle="Need help? We're here for you 24/7."
+              subtitle="We’re here for you 24/7."
               icon={<Clock />}
             />
           </div>
           <div className="pt-6 border-t border-gray-200 mt-6">
             <Link href="/student/support">
-              <Button className="w-full bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100">
+              <Button className="w-full bg-[#00404a] text-white rounded-full hover:bg-[#005965]">
                 Contact Support
               </Button>
             </Link>
@@ -197,7 +200,7 @@ export default function StudentDashboard() {
 
       {/* Quick Actions */}
       <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
-        <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-5">
+        <h2 className="text-2xl font-bold tracking-tight text-[#00404a] mb-5">
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -225,7 +228,7 @@ export default function StudentDashboard() {
   );
 }
 
-// Reusable component for the static stat cards
+// Stat Card
 function StatCard({
   title,
   value,
@@ -244,13 +247,13 @@ function StatCard({
           <span className="text-gray-500 text-sm font-medium uppercase tracking-wide">
             {title}
           </span>
-          <div className="text-4xl font-extrabold tracking-tight text-gray-900 mt-2">
+          <div className="text-4xl font-extrabold tracking-tight text-[#00404a] mt-2">
             {value}
           </div>
         </div>
-        <div className="p-3 rounded-full bg-emerald-100 transition-colors group-hover:bg-emerald-200">
+        <div className="p-3 rounded-full bg-[#005965]/10">
           {React.cloneElement(icon as React.ReactElement, {
-            className: 'h-6 w-6 text-emerald-500 transition-colors',
+            className: 'h-6 w-6 text-[#005965]',
           })}
         </div>
       </div>
@@ -259,7 +262,7 @@ function StatCard({
   );
 }
 
-// Updated HighlightItem component with icon prop
+// Highlight Item
 function HighlightItem({
   title,
   subtitle,
@@ -271,9 +274,9 @@ function HighlightItem({
 }) {
   return (
     <div className="flex items-center space-x-4">
-      <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+      <div className="w-12 h-12 bg-[#005965]/10 rounded-full flex items-center justify-center">
         {React.cloneElement(icon as React.ReactElement, {
-          className: 'h-6 w-6 text-emerald-500',
+          className: 'h-6 w-6 text-[#005965]',
         })}
       </div>
       <div>
@@ -284,7 +287,7 @@ function HighlightItem({
   );
 }
 
-// Reusable component for quick actions
+// Quick Action
 function QuickAction({
   href,
   icon,
@@ -299,9 +302,9 @@ function QuickAction({
   return (
     <Link href={href}>
       <div className="p-5 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-300 cursor-pointer flex items-center space-x-4 shadow-sm hover:shadow-md">
-        <div className="p-3 rounded-full bg-emerald-100 transition-colors group-hover:bg-emerald-200">
+        <div className="p-3 rounded-full bg-[#005965]/10">
           {React.cloneElement(icon as React.ReactElement, {
-            className: 'h-6 w-6 text-emerald-500 transition-colors',
+            className: 'h-6 w-6 text-[#00404a]',
           })}
         </div>
         <div>

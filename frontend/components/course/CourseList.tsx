@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Filter, SortAsc, Plus } from 'lucide-react'; // Added Plus icon
+import { Search, Filter, SortAsc, Plus } from 'lucide-react';
 import { Nunito_Sans } from 'next/font/google';
 
 const nunitoSans = Nunito_Sans({
@@ -21,8 +21,8 @@ const nunitoSans = Nunito_Sans({
 });
 
 interface CourseListProps {
-  courses?: Course[] | null; // Allow undefined/null
-  userRole: 'admin' | 'student';
+  courses?: Course[] | null;
+  userRole: 'admin' | 'student' | 'trainer';
   progress?: Record<string, number>;
   onCreateCourse?: () => void;
 }
@@ -37,23 +37,26 @@ export const CourseList: React.FC<CourseListProps> = ({
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('newest');
 
-  // Ensure we always work with an array
   const courseArray = Array.isArray(courses) ? courses : [];
+  console.log('Courses prop:', courses);
 
   const filteredAndSortedCourses = useMemo(() => {
     return courseArray
       .filter((course) => {
+        const trainerNames = (course.trainers || [])
+          .map((t: any) => t.name?.toLowerCase() || '')
+          .join(' ');
+
         const matchesSearch =
           course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
+          trainerNames.includes(searchTerm.toLowerCase());
 
         const matchesLevel = levelFilter === 'all' || course.level === levelFilter;
 
         return matchesSearch && matchesLevel;
       })
       .sort((a, b) => {
-        // Ensure createdAt exists for sorting
         const dateA = new Date(a.createdAt || 0).getTime();
         const dateB = new Date(b.createdAt || 0).getTime();
 
@@ -63,9 +66,9 @@ export const CourseList: React.FC<CourseListProps> = ({
           case 'oldest':
             return dateA - dateB;
           case 'rating':
-            return (b.rating || 0) - (a.rating || 0); // Handle undefined ratings
+            return (b.rating || 0) - (a.rating || 0);
           case 'students':
-            return (b.studentsCount || 0) - (a.studentsCount || 0); // Handle undefined student counts
+            return (b.studentsCount || 0) - (a.studentsCount || 0);
           case 'alphabetical':
             return a.title.localeCompare(b.title);
           default:
@@ -76,12 +79,10 @@ export const CourseList: React.FC<CourseListProps> = ({
 
   return (
     <div className={`${nunitoSans.className} space-y-6`}>
-      {/* Search and Filters */}
-      {/* Flex container for responsiveness: stacks vertically on small, row on sm+ */}
+      {/* Search & Filters */}
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center justify-between p-4 bg-gray-50 rounded-[16px] shadow-sm">
-        {/* Search Input and Selects - wrapped in a flex container that can wrap */}
-        <div className="flex-1 flex flex-col sm:flex-row gap-4 w-full sm:w-auto"> {/* Stacks selects on mobile, row on sm+ */}
-          <div className="relative flex-1 min-w-[180px] sm:max-w-md"> {/* Adjusted min-width for mobile */}
+        <div className="flex-1 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+          <div className="relative flex-1 min-w-[180px] sm:max-w-md">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
               placeholder="Search courses..."
@@ -97,10 +98,10 @@ export const CourseList: React.FC<CourseListProps> = ({
               <SelectValue placeholder="Level" />
             </SelectTrigger>
             <SelectContent className="bg-white border border-gray-200 text-gray-700 shadow-md rounded-[16px]">
-              <SelectItem value="all" className="hover:bg-gray-100 focus:bg-gray-100">All Levels</SelectItem>
-              <SelectItem value="beginner" className="hover:bg-gray-100 focus:bg-gray-100">Beginner</SelectItem>
-              <SelectItem value="intermediate" className="hover:bg-gray-100 focus:bg-gray-100">Intermediate</SelectItem>
-              <SelectItem value="advanced" className="hover:bg-gray-100 focus:bg-gray-100">Advanced</SelectItem>
+              <SelectItem value="all">All Levels</SelectItem>
+              <SelectItem value="beginner">Beginner</SelectItem>
+              <SelectItem value="intermediate">Intermediate</SelectItem>
+              <SelectItem value="advanced">Advanced</SelectItem>
             </SelectContent>
           </Select>
 
@@ -110,22 +111,21 @@ export const CourseList: React.FC<CourseListProps> = ({
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent className="bg-white border border-gray-200 text-gray-700 shadow-md rounded-[16px]">
-              <SelectItem value="newest" className="hover:bg-gray-100 focus:bg-gray-100">Newest</SelectItem>
-              <SelectItem value="oldest" className="hover:bg-gray-100 focus:bg-gray-100">Oldest</SelectItem>
-              <SelectItem value="rating" className="hover:bg-gray-100 focus:bg-gray-100">Rating</SelectItem>
-              <SelectItem value="students" className="hover:bg-gray-100 focus:bg-gray-100">Students</SelectItem>
-              <SelectItem value="alphabetical" className="hover:bg-gray-100 focus:bg-gray-100">A-Z</SelectItem>
+              <SelectItem value="newest">Newest</SelectItem>
+              <SelectItem value="oldest">Oldest</SelectItem>
+              <SelectItem value="rating">Rating</SelectItem>
+              <SelectItem value="students">Students</SelectItem>
+              <SelectItem value="alphabetical">A-Z</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Create Course Button - full width on mobile, auto on sm+ */}
         {userRole === 'admin' && onCreateCourse && (
           <Button
             onClick={onCreateCourse}
-            className="w-full sm:w-auto rounded-full px-6 py-3 font-semibold text-white bg-[#05d6ac] shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg flex items-center justify-center"
+            className="w-full sm:w-auto rounded-full px-6 py-3 font-semibold text-white bg-[#00404a] hover:bg-[#005965] shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg flex items-center justify-center"
           >
-            <Plus className="h-5 w-5 mr-2" /> {/* Added Plus icon */}
+            <Plus className="h-5 w-5 mr-2" />
             Create Course
           </Button>
         )}
@@ -134,7 +134,9 @@ export const CourseList: React.FC<CourseListProps> = ({
       {/* Course Grid */}
       {filteredAndSortedCourses.length === 0 ? (
         <div className="text-center py-12">
-          <div className="text-gray-400 text-lg mb-2 font-semibold tracking-wide">No courses found</div>
+          <div className="text-gray-400 text-lg mb-2 font-semibold tracking-wide">
+            No courses found
+          </div>
           <p className="text-gray-500 font-normal">
             {searchTerm || levelFilter !== 'all'
               ? 'Try adjusting your search or filters'
@@ -145,13 +147,13 @@ export const CourseList: React.FC<CourseListProps> = ({
               onClick={onCreateCourse}
               className="mt-6 rounded-full px-6 py-3 font-semibold text-white bg-[#05d6ac] shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg flex items-center justify-center"
             >
-              <Plus className="h-5 w-5 mr-2" /> {/* Added Plus icon */}
+              <Plus className="h-5 w-5 mr-2" />
               Create Your First Course
             </Button>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"> {/* Adjusted grid for responsiveness */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {filteredAndSortedCourses.map((course) => (
             <CourseCard
               key={course._id}

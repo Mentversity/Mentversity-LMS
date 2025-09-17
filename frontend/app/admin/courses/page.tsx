@@ -18,6 +18,10 @@ export default function AdminCoursesPage() {
     fetchCourses();
   }, [fetchCourses]);
 
+  useEffect(()=> {
+    document.title = "Admin Course Management - Mentversity";
+  })
+
   const handleCreateCourse = () => {
     router.push('/admin/courses/create');
   };
@@ -26,7 +30,7 @@ export default function AdminCoursesPage() {
     return (
       <div className={`${inter.className} flex items-center justify-center h-screen bg-gray-50 text-gray-800`}>
         <div className="text-center">
-          <Loader2 className="animate-spin h-8 w-8 text-[#05d6ac] mx-auto mb-4" />
+          <Loader2 className="animate-spin h-8 w-8 text-[#00404a] mx-auto mb-4" />
           <p className="text-gray-500 font-light">Loading courses...</p>
         </div>
       </div>
@@ -43,9 +47,6 @@ export default function AdminCoursesPage() {
             Create, edit, and manage your courses.
           </p>
         </div>
-        <Button onClick={handleCreateCourse} className="w-full md:w-auto px-6 py-2 rounded-full font-semibold shadow-md bg-[#05d6ac] text-white hover:bg-[#04b895] transition-colors">
-          Create New Course
-        </Button>
       </div>
       <CourseList
         courses={courses}

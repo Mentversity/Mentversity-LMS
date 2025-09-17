@@ -8,6 +8,7 @@ import {
   AssignmentSubmission,
   Progress,
 } from "@/types";
+import { get } from "node:http";
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -72,6 +73,35 @@ export const authApi = {
     const response = await api.post("/auth/register-student", payload);
     return response.data;
   },
+
+  // NEW: Method to register a trainer (or assign courses to an existing one)
+  registerTrainer: async (
+    email: string,
+    password?: string,
+    name?: string,
+    assignedCourseIds: string[] = []
+  ) => {
+    // Password is optional for existing trainer updates, but required for new registrations
+    const payload: {
+      email: string;
+      password?: string;
+      name?: string;
+      assignedCourseIds: string[];
+    } = {
+      email,
+      assignedCourseIds,
+    };
+    if (password) {
+      payload.password = password;
+    }
+    if (name) {
+      payload.name = name;
+    }
+
+    const response = await api.post("/auth/register-trainer", payload);
+    console.log("Registered trainer:", response.data);
+    return response.data;
+  },
 };
 
 // Courses API calls
@@ -120,6 +150,7 @@ export const coursesApi = {
    * @returns {Promise<any>} A promise that resolves to the updated course data.
    */
   update: async (id: string, formData: FormData): Promise<any> => {
+    console.log("Update Course FormData api:", Array.from(formData.entries()));
     const response = await api.put(`/courses/${id}`, formData, {
       headers: {
         "Content-Type": "multipart/form-data", // Crucial for FormData
@@ -150,6 +181,18 @@ export const coursesApi = {
     const response = await api.post(`/courses/${courseId}/modules`, moduleData);
     return response.data;
   },
+
+  updateModule: async (
+    moduleId: string,
+    moduleData: Partial<Module>
+  ): Promise<Module> => {
+    const response = await api.put(`/modules/${moduleId}`, moduleData);
+    return response.data;
+  },
+
+  deleteModule: async (moduleId: string): Promise<void> => {
+    await api.delete(`/modules/${moduleId}`);
+  },
 };
 
 // Modules API calls
@@ -163,15 +206,15 @@ export const modulesApi = {
   },
 
   updateTopic: async (
-    moduleId: string,
     topicId: string,
     topicData: Partial<Topic>
   ): Promise<Topic> => {
-    const response = await api.put(
-      `/modules/${moduleId}/topics/${topicId}`,
-      topicData
-    );
+    const response = await api.put(`/topics/${topicId}`, topicData);
     return response.data;
+  },
+
+  deleteTopic: async (topicId: string): Promise<void> => {
+    await api.delete(`/topics/${topicId}`);
   },
 };
 
@@ -270,11 +313,11 @@ export const assignmentsApi = {
    */
   grade: async (
     assignmentId: string,
-    score: number,
+    grade: number,
     feedback: string
   ): Promise<AssignmentSubmission> => {
     const response = await api.post(`/assignments/${assignmentId}/grade`, {
-      score,
+      grade,
       feedback,
     });
     return response.data;
@@ -290,6 +333,21 @@ export const assignmentsApi = {
     const response = await api.get("/student/assignments/structured");
     // Assuming the backend returns { courses: [...] } as per the new controller
     return response.data.data.courses;
+  },
+
+  getTrainerAssignmentsOverview: async (): Promise<any[]> => {
+    const response = await api.get("/trainer/assignments/overview");
+    console.log("Trainer assignments overview data:", response.data.data);
+    return response.data.data;
+  },
+
+  getAssignmentsCompletion: async (
+    courseId: string
+  ): Promise<{ completionPercentage: number }> => {
+    const response = await api.get(
+      `/courses/${courseId}/assignments/completion`
+    );
+    return response.data;
   },
 };
 
@@ -317,8 +375,38 @@ export const studentsApi = {
     return response.data;
   },
 
+  getTotalCount: async (): Promise<{ totalCount: number }> => {
+    const response = await api.get("/students/count");
+    return response.data;
+  },
+
   getByCourseId: async (courseId: string): Promise<User[]> => {
     const response = await api.get(`/students/course/${courseId}`);
     return response.data;
   },
 };
+
+// Trainers API calls
+export const trainersApi = {
+  getAll: async (): Promise<User[]> => {
+    const response = await api.get("/trainers");
+    return response.data;
+  },
+
+  getTotalCount: async (): Promise<{ totalCount: number }> => {
+    const response = await api.get("/trainers/count");
+    return response.data;
+  },
+
+  getById: async (id: string): Promise<User> => {
+    const response = await api.get(`/trainers/${id}`);
+    return response.data;
+  },
+
+  getByCourseId: async (courseId: string): Promise<User[]> => {
+    const response = await api.get(`/trainers/course/${courseId}`);
+    return response.data;
+  },
+};
+
+export default api;

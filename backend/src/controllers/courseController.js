@@ -11,32 +11,60 @@ const fs = require('fs'); // Required for file cleanup if using disk storage
 // GET /api/courses
 exports.getCourses = catchAsync(async (req, res) => {
   let courses;
+  console.log(req.user);
+
   if (req.user.role === 'admin') {
     // Admins see all courses
-    courses = await Course.find().lean();
+    courses = await Course.find()
+      .populate({
+        path: 'trainers',
+        model: 'User', // explicitly say User model
+        select: 'name email role', // choose only safe fields
+      })
+      .lean();
   } else if (req.user.role === 'student') {
-    // Students see ONLY courses they are explicitly enrolled in
+    // Students see ONLY enrolled courses
     const enrolledCourseIds = req.user.enrolledCourses || [];
 
     if (enrolledCourseIds.length === 0) {
       courses = [];
     } else {
-      courses = await Course.find({ _id: { $in: enrolledCourseIds } }).lean();
+      courses = await Course.find({ _id: { $in: enrolledCourseIds } })
+        .populate({
+          path: 'trainers',
+          model: 'User',
+          select: 'name email role',
+        })
+        .lean();
+    }
+  } else if (req.user.role === 'trainer') {
+    // Trainers see ONLY teaching courses
+    const teachingCourseIds = req.user.teachingCourses || [];
+
+    if (teachingCourseIds.length === 0) {
+      courses = [];
+    } else {
+      courses = await Course.find({ _id: { $in: teachingCourseIds } })
+        .populate({
+          path: 'trainers',
+          model: 'User',
+          select: 'name email role',
+        })
+        .lean();
     }
   } else {
     courses = [];
   }
+
   res.json(ApiResponse.ok({ courses }));
 });
+
 
 // POST /api/courses (admin)
 // NOTE: This now expects the 'thumbnail' file to be in req.file
 exports.createCourse = catchAsync(async (req, res) => {
 
-  const { title, description, price, level, duration } = req.body;
-  console.log(req)
-  console.log(req.body)
-  console.log(req.file); // Debugging line to check if file is received
+  const { title, description, category, level } = req.body;
   if (!req.file) {
     return res.status(400).json(ApiResponse.fail('Thumbnail image is required.'));
   }
@@ -54,9 +82,8 @@ exports.createCourse = catchAsync(async (req, res) => {
       const course = await Course.create({
         title,
         description,
-        price,
+        category,
         level,
-        duration,
         thumbnail: {
           url: uploadResult.secure_url,
           publicId: uploadResult.public_id,
@@ -84,11 +111,13 @@ exports.getCourseDetails = catchAsync(async (req, res) => {
 // NOTE: This now supports updating the thumbnail via req.file
 exports.updateCourse = catchAsync(async (req, res) => {
   const courseId = req.params.id;
-  const { title, description, price, level, duration } = req.body;
+  const { title, description, category, level } = req.body;
+  console.log(req.body)
+  console.log(req.file)
   const course = await Course.findById(courseId);
   if (!course) return res.status(404).json(ApiResponse.fail('Course not found'));
 
-  const updateData = { title, description, price, level, duration };
+  const updateData = { title, description, level, category };
   
   if (req.file) {
     // If a new thumbnail file is provided, upload it to Cloudinary

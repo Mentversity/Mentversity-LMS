@@ -31,7 +31,7 @@ export default function Home() {
   }, [isAuthenticated, user, isLoading, router]);
 
   return (
-    <div className={`${inter.className} min-h-screen flex items-center justify-center bg-[#0A0F1E] text-white`}>
+    <div className={`${inter.className} min-h-screen flex items-center justify-center bg-white text-black`}>
       <div className="text-center">
         <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[#00E5FF] hover:text-[#39FF14] transition-colors duration-300" />
         <p className={`${nunito_sans.className} text-white/60 font-light uppercase tracking-tight`}>Loading...</p>

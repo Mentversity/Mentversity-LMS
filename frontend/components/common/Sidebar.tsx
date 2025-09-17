@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react'; // Import useState and useEffect
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   BookOpen,
@@ -12,11 +13,17 @@ import {
   Settings,
   GraduationCap,
   FileText,
-  Award,
-  X, // Added for close button icon
-  Menu, // Added for hamburger menu icon
+  LogOut,
+  X,
+  Menu,
 } from 'lucide-react';
 import { Nunito_Sans } from 'next/font/google';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@/components/ui/avatar';
+import { useAuthStore } from '@/store/authStore';
 
 const nunitoSans = Nunito_Sans({
   subsets: ['latin'],
@@ -31,14 +38,17 @@ interface SidebarItem {
 }
 
 interface SidebarProps {
-  userRole: 'admin' | 'student';
+  userRole: 'admin' | 'student' | 'trainer';
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false); // State to manage sidebar visibility on mobile
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
 
-  // Close sidebar on route change for mobile
+  const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
@@ -47,86 +57,150 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
     { title: 'Dashboard', icon: Home, href: '/admin/dashboard' },
     { title: 'Courses', icon: BookOpen, href: '/admin/courses' },
     { title: 'Students', icon: Users, href: '/admin/students' },
-    { title: 'Register Students', icon: Users, href: '/admin/register-students' },
-    { title: 'Analytics', icon: BarChart3, href: '/admin/analytics' },
-    { title: 'Settings', icon: Settings, href: '/admin/settings' },
+    { title: 'Trainers', icon: GraduationCap, href: '/admin/trainers' },
+    { title: 'Registrations', icon: Users, href: '/admin/registrations' },
   ];
 
   const studentItems: SidebarItem[] = [
     { title: 'Dashboard', icon: Home, href: '/student/dashboard' },
     { title: 'My Courses', icon: GraduationCap, href: '/student/courses' },
     { title: 'Assignments', icon: FileText, href: '/student/assignments' },
-    // { title: 'Certificates', icon: Award, href: '/student/certificates' },
-    // { title: 'Settings', icon: Settings, href: '/student/settings' },
   ];
 
-  const items = userRole === 'admin' ? adminItems : studentItems;
+  const trainerItems: SidebarItem[] = [
+    { title: 'Dashboard', icon: Home, href: '/trainer/dashboard' },
+    { title: 'My Courses', icon: GraduationCap, href: '/trainer/courses' },
+    { title: 'Students', icon: Users, href: '/trainer/students' },
+    { title: 'Assignments', icon: FileText, href: '/trainer/assignments' },
+  ];
+
+  const items =
+    userRole === 'admin'
+      ? adminItems
+      : userRole === 'trainer'
+      ? trainerItems
+      : studentItems;
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   return (
     <>
-      {/* Mobile Hamburger Menu Button */}
-      {/* This button toggles the sidebar on small screens */}
-      <div className="lg:hidden fixed top-4 right-4 z-50"> {/* Changed left-4 to right-4 */}
+      {/* Mobile Hamburger */}
+      <div className="lg:hidden fixed top-4 right-4 z-50">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 rounded-full bg-emerald-500 text-white shadow-md hover:bg-emerald-600 transition-colors"
-          aria-label="Toggle sidebar"
-          aria-expanded={isOpen} // Accessibility: indicates if sidebar is open
+          className="p-2 rounded-full bg-[#00404a] text-white shadow-md hover:bg-emerald-600 transition-colors"
+          aria-label="Toggle menu"
         >
           <Menu className="h-6 w-6" />
         </button>
       </div>
 
-      {/* Sidebar Container */}
+      {/* Sidebar */}
       <aside
         className={cn(
-          `${nunitoSans.className} bg-[#fafafa] border-r border-gray-200 h-full shadow-lg transition-all duration-300 ease-in-out`,
-          'fixed inset-y-0 left-0 z-40 lg:relative lg:block', // Fixed on mobile, relative/block on large screens
-          isOpen ? 'translate-x-0 w-64' : '-translate-x-full w-0', // Mobile: slide in/out and collapse width
-          'lg:w-64 lg:translate-x-0' // Large screens: always full width and visible
+          `${nunitoSans.className} bg-[#00404a] border-r border-gray-200 h-full shadow-lg transition-all duration-300 ease-in-out flex flex-col`,
+          'fixed inset-y-0 left-0 z-40 lg:relative lg:block',
+          isOpen ? 'translate-x-0 w-64' : '-translate-x-full w-0',
+          'lg:translate-x-0',
+          isHovered ? 'lg:w-64' : 'lg:w-20'
         )}
-        // Added overflow-hidden to prevent content bleed when collapsed
         style={{ overflowX: isOpen ? 'visible' : 'hidden' }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Mobile Header (inside sidebar) */}
-        <div className="p-4 flex items-center justify-between lg:hidden">
-          <span className="text-xl font-bold text-gray-900">Mentversity</span>
+        {/* Logo Section */}
+        <div className="p-4 flex items-center justify-between border-b border-gray-600">
+          <div className="w-full flex items-center">
+            <Image
+              src="/logo.png"
+              alt="Mentversity logo"
+              width={40}
+              height={40}
+              className="rounded-full"
+            />
+            {(isHovered || isOpen) && (
+              <span className="ml-3 text-xl font-bold text-white">Mentversity</span>
+            )}
+          </div>
+          {/* Mobile Close Button */}
           <button
             onClick={() => setIsOpen(false)}
-            className="p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-colors"
-            aria-label="Close sidebar"
+            className="lg:hidden p-2 rounded-full text-gray-200 hover:bg-gray-700 transition-colors"
+            aria-label="Close menu"
           >
             <X className="h-6 w-6" />
           </button>
         </div>
-        
-        {/* Navigation Links */}
-        <nav className="p-4 space-y-2">
+
+        {/* User Profile: avatar only when collapsed, full card when expanded */}
+        <div className="p-4 flex items-center justify-center transition-opacity duration-300">
+          {(isHovered || isOpen) ? (
+            <div className="flex items-center space-x-3 w-full">
+              <Avatar className="h-12 w-12 border-2 border-white rounded-full shadow-lg">
+                {user?.avatar ? (
+                  <AvatarImage src={user.avatar} alt={user.name || ''} />
+                ) : (
+                  <AvatarFallback className="bg-[#05d6ac]/20 text-[#05d6ac] font-semibold text-lg">
+                    {user?.name?.split(' ').map((n) => n[0]).join('').toUpperCase()}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <div className="flex flex-col truncate">
+                <p className="text-white font-semibold text-sm truncate">{user?.name || 'Guest User'}</p>
+                <p className="text-[#05d6ac] text-xs truncate capitalize">{user?.role || ''}</p>
+              </div>
+            </div>
+          ) : (
+            // collapsed sidebar: only show circular avatar centered
+            <Avatar className="h-12 w-12 border-2 border-white rounded-full shadow-lg">
+              {user?.avatar ? (
+                <AvatarImage src={user.avatar} alt={user.name || ''} />
+              ) : (
+                <AvatarFallback className="bg-[#05d6ac]/20 text-[#05d6ac] font-semibold text-lg">
+                  {user?.name?.split(' ').map((n) => n[0]).join('').toUpperCase()}
+                </AvatarFallback>
+              )}
+            </Avatar>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-grow p-2 space-y-1 overflow-auto">
           {items.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'relative flex items-center space-x-4 px-4 py-3 rounded-[16px] text-base font-semibold transition-all duration-300 group',
+                  'relative flex items-center px-4 py-3 rounded-[16px] text-base font-semibold transition-all duration-300 group',
                   isActive
-                    ? 'bg-white text-[#121926] shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-100/70 hover:text-gray-800'
+                    ? 'bg-white text-black shadow-sm'
+                    : 'text-gray-300 hover:bg-gray-500/30 hover:text-white'
                 )}
-                onClick={() => setIsOpen(false)} // Close sidebar on link click for mobile
+                onClick={() => setIsOpen(false)}
               >
                 <item.icon
                   className={cn(
                     'h-6 w-6 transition-all duration-300',
-                    isActive
-                      ? 'text-[#05d6ac]'
-                      : 'text-gray-400 group-hover:text-gray-500'
+                    isActive ? 'text-[#05d6ac]' : 'text-gray-300 group-hover:text-[#05d6ac]'
                   )}
                 />
-                <span className="font-semibold">{item.title}</span>
-                {item.badge && (
-                  <span className="ml-auto bg-[#05d6ac] text-white text-xs font-bold rounded-full px-2 py-1 tracking-wider shadow-sm">
+                <span
+                  className={cn(
+                    'ml-4 whitespace-nowrap transition-opacity duration-300 select-none',
+                    isHovered || isOpen ? 'opacity-100' : 'opacity-0 lg:hidden'
+                  )}
+                >
+                  {item.title}
+                </span>
+                {item.badge && (isHovered || isOpen) && (
+                  <span className="ml-auto bg-[#05d6ac] text-white text-xs font-bold rounded-full px-2 py-1 shadow-sm">
                     {item.badge}
                   </span>
                 )}
@@ -134,14 +208,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
             );
           })}
         </nav>
+
+        {/* Animated Logout Button at Bottom */}
+        <div className="mt-auto p-4 mb-2 flex justify-center items-end">
+          <button
+            onClick={handleLogout}
+            className={cn(
+              'transition-all duration-300 flex items-center justify-center space-x-2 shadow focus:outline-none bg-red-500 text-white',
+              isHovered || isOpen
+                ? 'w-full px-4 py-2 rounded-md font-semibold hover:bg-red-600'
+                : 'w-12 h-12 rounded-full hover:bg-red-600'
+            )}
+            aria-label="Logout"
+            title="Logout"
+          >
+            <LogOut className="h-6 w-6" />
+            {(isHovered || isOpen) && <span>Logout</span>}
+          </button>
+        </div>
       </aside>
 
-      {/* Overlay for mobile when sidebar is open */}
+      {/* Overlay mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 lg:hidden"
           onClick={() => setIsOpen(false)}
-          aria-hidden="true" // Accessibility: hides overlay from screen readers
         ></div>
       )}
     </>

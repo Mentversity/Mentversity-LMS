@@ -39,3 +39,10 @@ exports.getCourseProgress = catchAsync(async (req, res) => {
 
   res.json(ApiResponse.ok({ totalTopics, completed, percentage, progress: progress || null }));
 });
+
+// GET /api/progress
+exports.getAllProgress = catchAsync(async (req, res) => {
+  const progresses = await Progress.find({ user: req.user._id }).lean();
+  res.json(ApiResponse.ok({ progresses }));
+});
+

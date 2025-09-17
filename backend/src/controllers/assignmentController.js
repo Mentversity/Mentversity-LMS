@@ -126,11 +126,13 @@ exports.getAssignmentStatus = catchAsync(async (req, res) => {
 // POST /api/assignments/:id/grade (admin)
 exports.gradeSubmission = catchAsync(async (req, res) => {
   const { id } = req.params;
+  console.log(req.body)
   const { grade, feedback } = req.body;
+  console.log('Grading submission:', id, 'with grade:', grade, 'and feedback:', feedback);
 
-  const submission = await Submission.findById(id);
+  const submission = await Submission.findOne({topic: id});
   if (!submission) return res.status(404).json(ApiResponse.fail('Submission not found'));
-
+  console.log('Found submission:', submission);
   submission.grade = grade;
   submission.feedback = feedback || '';
   submission.status = 'graded';
@@ -244,4 +246,210 @@ exports.getStudentAssignmentsStructured = catchAsync(async (req, res) => {
   );
 
   res.json(ApiResponse.ok({ courses: coursesWithAssignments }));
+});
+
+// GET /api/trainer/assignments/overview?courseId=COURSE_ID
+exports.getTrainerAssignmentsOverview = catchAsync(async (req, res) => {
+  // 1. Verify trainer role
+  if (req.user.role !== 'trainer') {
+    return res.status(403).json(ApiResponse.fail('Access denied. Trainers only.'));
+  }
+
+  // 2. Get list of courses taught by trainer (from user.teachingCourses)
+  const trainer = await User.findById(req.user._id).select('teachingCourses').lean();
+  const coursesTaught = await Course.find({ _id: { $in: trainer.teachingCourses } }).lean();
+
+  // Optionally, support filtering by selected course (courseId)
+  const selectedCourseId = req.query.courseId || (coursesTaught[0]?._id && String(coursesTaught[0]._id));
+
+  if (!selectedCourseId) {
+    return res.json(ApiResponse.ok({ courses: coursesTaught, students: [], topics: [], assignments: [] }));
+  }
+
+  // 3. Get enrolled students for selected course
+  const enrolledStudents = await User.find({ enrolledCourses: selectedCourseId, role: 'student' })
+    .select('_id name email avatar')
+    .lean();
+
+  // 4. Get modules and topics for that course
+  const modules = await ModuleModel.find({ course: selectedCourseId }).sort({ order: 1 }).lean();
+  const moduleIds = modules.map(m => m._id);
+  const topics = await Topic.find({ module: { $in: moduleIds } }).sort({ order: 1 }).lean();
+  const topicIds = topics.map(t => t._id);
+
+  // 5. Get all assignment submissions for these topics and students
+  const submissions = await Submission.find({
+    topic: { $in: topicIds },
+    student: { $in: enrolledStudents.map(s => s._id) },
+  })
+    .populate('student', 'name email avatar')
+    .populate('topic', 'title')
+    .lean();
+
+  // 6. Structure assignments per student per topic
+  const studentsList = enrolledStudents.map(student => {
+    const assignmentStatus = topics.map(topic => {
+      const sub = submissions.find(s => String(s.student._id) === String(student._id) && String(s.topic._id) === String(topic._id));
+      return {
+        topicId: topic._id,
+        topicTitle: topic.title,
+        assignment: topic.assignment,
+        submission: sub
+          ? {
+              status: sub.status,
+              fileUrl: sub.fileUrl,
+              grade: sub.grade,
+              feedback: sub.feedback,
+              submittedAt: sub.createdAt
+            }
+          : null
+      };
+    });
+    return {
+      id: student._id,
+      name: student.name,
+      email: student.email,
+      avatar: student.avatar,
+      assignments: assignmentStatus
+    };
+  });
+
+  res.json(ApiResponse.ok({
+    courses: coursesTaught.map(c => ({ id: c._id, title: c.title })),
+    selectedCourseId,
+    students: studentsList,
+    topics: topics.map(t => ({
+      id: t._id,
+      title: t.title,
+      assignment: t.assignment
+    }))
+  }));
+});
+
+exports.getAssignmentCompletion = catchAsync(async (req, res) => {
+  const { id: courseId } = req.params;
+  const user = req.user;
+
+  if (!courseId) {
+    return res.status(400).json(ApiResponse.fail("courseId is required"));
+  }
+
+  // 1️⃣ Get all assignment topics in this course
+  const modules = await ModuleModel.find({ course: courseId }).select("_id").lean();
+  const moduleIds = modules.map((m) => m._id);
+
+  const topics = await Topic.find({
+    module: { $in: moduleIds },
+    assignment: { $ne: null },
+  }).select("_id").lean();
+
+  const topicIds = topics.map((t) => t._id);
+  const totalAssignments = topics.length;
+
+  if (totalAssignments === 0) {
+    return res.json(
+      ApiResponse.ok({
+        courseId,
+        totalAssignments: 0,
+        message: "No assignments in this course",
+      })
+    );
+  }
+
+  // 2️⃣ Student role → only their own completion (fast aggregation)
+  if (user.role === "student") {
+    const submittedCount = await Submission.countDocuments({
+      topic: { $in: topicIds },
+      student: user._id,
+    });
+
+    return res.json(
+      ApiResponse.ok({
+        courseId,
+        student: {
+          id: user._id,
+          name: user.name,
+          submitted: submittedCount,
+          totalAssignments,
+          completionRate: Math.round((submittedCount / totalAssignments) * 100),
+        },
+      })
+    );
+  }
+
+  // 3️⃣ Trainer role → aggregate for ALL students in one query
+  if (user.role === "trainer") {
+    const enrolledStudents = await User.find({
+      enrolledCourses: courseId,
+      role: "student",
+    })
+      .select("_id name")
+      .lean();
+
+    if (!enrolledStudents.length) {
+      return res.json(
+        ApiResponse.ok({
+          courseId,
+          totalAssignments,
+          totalStudents: 0,
+          overallCompletionRate: 0,
+          students: [],
+        })
+      );
+    }
+
+    // Aggregation pipeline: count submissions per student in one go
+    const submissionsAgg = await Submission.aggregate([
+      {
+        $match: {
+          topic: { $in: topicIds },
+          student: { $in: enrolledStudents.map((s) => s._id) },
+        },
+      },
+      {
+        $group: {
+          _id: "$student",
+          submitted: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const submissionMap = submissionsAgg.reduce((acc, s) => {
+      acc[s._id.toString()] = s.submitted;
+      return acc;
+    }, {});
+
+    const studentsStats = enrolledStudents.map((student) => {
+      const submitted = submissionMap[student._id.toString()] || 0;
+      const completionRate = (submitted / totalAssignments) * 100;
+      return {
+        id: student._id,
+        name: student.name,
+        submitted,
+        totalAssignments,
+        completionRate: Math.round(completionRate),
+      };
+    });
+
+    // Overall completion
+    const totalExpected = totalAssignments * enrolledStudents.length;
+    const actualSubmissions = submissionsAgg.reduce(
+      (sum, s) => sum + s.submitted,
+      0
+    );
+
+    const overallCompletionRate = (actualSubmissions / totalExpected) * 100;
+
+    return res.json(
+      ApiResponse.ok({
+        courseId,
+        totalAssignments,
+        totalStudents: enrolledStudents.length,
+        overallCompletionRate: Math.round(overallCompletionRate),
+        students: studentsStats,
+      })
+    );
+  }
+
+  return res.status(403).json(ApiResponse.fail("Unauthorized role"));
 });
