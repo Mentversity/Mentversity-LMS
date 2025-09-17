@@ -106,7 +106,6 @@ export const LoginForm: React.FC = () => {
     }
   };
 
-  const isProd = process.env.NODE_ENV === 'production';
   return (
     <div className={`${nunitoSans.className} min-h-screen flex items-center justify-center px-4 relative`}>
       {/* Animated Bubble Background */}
@@ -183,18 +182,12 @@ export const LoginForm: React.FC = () => {
               )}
             </Button>
           </form>
-          {
-            isProd ? (
-              <p className="text-xs text-gray-500 text-center mt-2">
-                Forgot your password? Please contact support to reset it.
-              </p>
-            ) : (   <div className="text-center text-xs text-gray-500 mt-4 font-mono space-y-1">
+        <div className="text-center text-xs text-gray-500 mt-4 font-mono space-y-1">
             <p>Demo credentials for testing:</p>
             <p className="font-semibold">Admin: <span className="underline">admin@lms.com</span> / Admin@123</p>
             <p className="font-semibold">Trainer: <span className="underline">trainer@lms.com</span> / Trainer@123</p>
             <p className="font-semibold">Student: <span className="underline">student@lms.com</span> / Student@123</p>
-          </div>)
-          }
+          </div>
         </CardContent>
       </Card>
     </div>
